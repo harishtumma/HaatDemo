@@ -12,7 +12,7 @@ data class Stores (
   @SerializedName("distance"           ) var distance           : Double?            = null,
   @SerializedName("icon"               ) var icon               : Icon?              = Icon(),
   @SerializedName("rating"             ) var rating             : Rating?            = Rating(),
-  @SerializedName("labels"             ) var labels             : ArrayList<String>  = arrayListOf(),
+//  @SerializedName("labels"             ) var labels             : ArrayList<String>  = arrayListOf(),
   @SerializedName("closestWorkingHour" ) var closestWorkingHour : String?            = null,
   @SerializedName("is24Hours"          ) var is24Hours          : Boolean?           = null,
   @SerializedName("priority"           ) var priority           : Int?               = null,

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.haat.domain.data.VenuInfoData
+import com.example.haat.domain.usecase.AddCartUseCase
+import com.example.haat.domain.usecase.GetCartListUseCase
 import com.example.haat.domain.usecase.GetMenuInfoDataUseCase
 import com.example.haat.domain.usecase.GetMenuItemDataUseCase
 import com.example.haat.domain.utility.Resource
@@ -17,7 +19,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DetailsPageViewModel @Inject constructor(val getMenuInfoDataUseCase: GetMenuInfoDataUseCase, val getMenuItemDataUseCase: GetMenuItemDataUseCase): ViewModel()
+class DetailsPageViewModel @Inject constructor(val getMenuInfoDataUseCase: GetMenuInfoDataUseCase, val getMenuItemDataUseCase: GetMenuItemDataUseCase,
+val addCartUseCase: AddCartUseCase): ViewModel()
 {
     val detailsPageUiState_ = MutableStateFlow(DetailScreenState())
     val detailsPageUiState = detailsPageUiState_.asStateFlow()
@@ -27,6 +30,33 @@ class DetailsPageViewModel @Inject constructor(val getMenuInfoDataUseCase: GetMe
         viewModelScope.launch {
             loadVenuInfoData()
             loadVenuMenuData()
+        }
+    }
+
+
+    fun resetSelectedItemForCart(){
+        Log.d("hhh","resetSelectedItemForCart()")
+        detailsPageUiState_.update { it.copy(selectedItemForCart = null) }
+    }
+
+    fun addCart(venuInfoData: VenuInfoData) {
+        viewModelScope.launch {
+            addCartUseCase(venuInfoData).collect {
+                when(it)
+                {
+                    is Resource.Error -> {}
+                    Resource.Loading -> {}
+                    is Resource.Success<*> -> {
+                        if(it.data == -1)
+                        {
+                            //toast error
+                        }
+                        else {
+                            //toast success
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -66,6 +96,11 @@ class DetailsPageViewModel @Inject constructor(val getMenuInfoDataUseCase: GetMe
                 }
             }
         }
+    }
+
+    fun setSelectedItemForCart(item: VenuInfoData) {
+        detailsPageUiState_.update { it.copy(selectedItemForCart = item) }
+
     }
 
 }

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.haat.presenter.CartScreen
 import com.example.haat.presenter.DetailScreen
 import com.example.haat.presenter.HomeScreen
 
@@ -23,7 +24,17 @@ fun AppNavHost(navController: NavHostController) {
 
         // Details screen
         composable(NavRoutes.Details.route) {
-            DetailScreen()
+            DetailScreen(){
+                navController.navigate(NavRoutes.Cart.route)
+            }
+           // CartScreen() { }
         }
+
+
+        composable(NavRoutes.Cart.route) {
+            CartScreen()
+
+        }
+
     }
 }

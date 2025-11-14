@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,11 +20,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,27 +49,56 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.Placeholder
 import com.bumptech.glide.integration.compose.placeholder
 import com.example.haat.Const
 import com.example.haat.R
+import com.example.haat.domain.data.VenuInfoData
 import com.example.haat.presenter.component.HorizontalBannerCard
 import com.example.haat.presenter.viewmodel.DetailsPageViewModel
 
 
 @Composable
-fun DetailScreen() {
+fun DetailScreen(onNavigation:()->Unit = {}) {
     val viewmodel: DetailsPageViewModel = hiltViewModel()
 
     val state = viewmodel.detailsPageUiState.collectAsState().value
-    DetailScreenComponent(state)
+    Box(modifier = Modifier.fillMaxSize()) {
+        DetailScreenComponent(state) { it ->
+            Log.d("hhh","item clicked: $it")
+            viewmodel.setSelectedItemForCart(it)
+        }
+        FloatingCartButton(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp,16.dp,16.dp,56.dp)
+
+        )
+        {
+            Log.d("hhh","FloatingCartButton clicked")
+            onNavigation()
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewmodel.loadDetailsPage()
+    }
+
+    if (state.selectedItemForCart != null) {
+        showAlert(state.selectedItemForCart != null, onItemClick = {
+            viewmodel.addCart(state.selectedItemForCart!!)
+            viewmodel.resetSelectedItemForCart()
+        }) {
+            viewmodel.resetSelectedItemForCart()
+        }
     }
 }
 
 @Composable
-fun DetailScreenComponent(detailScreenState: DetailScreenState) {
+fun DetailScreenComponent(
+    detailScreenState: DetailScreenState, onItemClick: (VenuInfoData) -> Unit = {
+
+    }
+) {
     val scrollState = rememberScrollState()
     val bannerHeight = 240.dp // 3:2 aspect ratio (approx)
 
@@ -68,10 +107,14 @@ fun DetailScreenComponent(detailScreenState: DetailScreenState) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        val img=Const.BASE_URL+detailScreenState.venuInfoData?.bannerImage
-        Log.d("hhh","BannerImage: $img")
+        val img = Const.BASE_URL + detailScreenState.venuInfoData?.bannerImage
+        Log.d("hhh", "BannerImage: $img")
         // 1️⃣ Banner first → drawn behind
-        CollapsingBanner(scrollState, bannerHeight, Const.BASE_URL+detailScreenState.venuInfoData?.bannerImage)
+        CollapsingBanner(
+            scrollState,
+            bannerHeight,
+            Const.BASE_URL + detailScreenState.venuInfoData?.bannerImage
+        )
 
         // 2️⃣ Scrollable content
         Column(
@@ -100,9 +143,9 @@ fun DetailScreenComponent(detailScreenState: DetailScreenState) {
             }
 
 // Sample grid items (replace with your real data)
-           /* val items = List(10) { index ->
-                Triple("Title ${index + 1}", "Subtitle ${index + 1}", "Description ${index + 1}")
-            }*/
+            /* val items = List(10) { index ->
+                 Triple("Title ${index + 1}", "Subtitle ${index + 1}", "Description ${index + 1}")
+             }*/
             val items = detailScreenState.venuInfoList
 
             Column(
@@ -129,6 +172,9 @@ fun DetailScreenComponent(detailScreenState: DetailScreenState) {
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(2f / 3f) // ✅ maintain 2:3 aspect ratio
+                                        .clickable {
+                                            onItemClick(items[index])
+                                        }
                                 )
                             } else {
                                 Spacer(modifier = Modifier.weight(1f))
@@ -140,15 +186,32 @@ fun DetailScreenComponent(detailScreenState: DetailScreenState) {
             }
 
 
-
-
         }
+    }
+}
+
+
+@Composable
+fun FloatingCartButton(modifier: Modifier,onclick:()->Unit={}) {
+    FloatingActionButton(
+        onClick = { onclick()/* Navigate to Cart screen or show Cart */ },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
+            contentDescription = "Cart"
+        )
     }
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-private fun CollapsingBanner(scrollState: ScrollState, bannerHeight: Dp,bannerImageUrl:String="") {
+private fun CollapsingBanner(
+    scrollState: ScrollState,
+    bannerHeight: Dp,
+    bannerImageUrl: String = ""
+) {
     val scrollY = scrollState.value.toFloat()
     val collapseRange = with(LocalDensity.current) { bannerHeight.toPx() }
 
@@ -159,7 +222,7 @@ private fun CollapsingBanner(scrollState: ScrollState, bannerHeight: Dp,bannerIm
 
     GlideImage(
         model = bannerImageUrl,
-      //  painter = painterResource(id = R.drawable.ic_launcher_background), // your banner image
+        //  painter = painterResource(id = R.drawable.ic_launcher_background), // your banner image
         contentDescription = "Banner",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -172,7 +235,7 @@ private fun CollapsingBanner(scrollState: ScrollState, bannerHeight: Dp,bannerIm
                 scaleY = scale
             },
         failure = placeholder(R.drawable.ic_launcher_background)
-        
+
     )
 }
 
@@ -204,6 +267,44 @@ fun HeaderCard(title: String = "", description: String = "") {
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+}
+
+@Composable
+ fun showAlert(_showDialog: Boolean, onItemClick: () -> Unit, onDismiss: () -> Unit = {}) {
+
+    var showDialog by remember { mutableStateOf(_showDialog) }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+
+            title = {
+                Text(text = "Add item?")
+            },
+
+            text = {
+                Text("Are you sure you want to Add this item?")
+            },
+
+            confirmButton = {
+                TextButton(onClick = {
+                    // handle confirm
+                    onItemClick()
+                    showDialog = false
+                }) {
+                    Text("OK")
+                }
+            },
+
+            dismissButton = {
+                TextButton(onClick = {
+                    onDismiss()
+                    showDialog = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

@@ -1,8 +1,10 @@
 package com.example.haat.di
 
+import com.example.haat.data.reposiotry.CartRepositoryImpl
 import com.example.haat.data.reposiotry.HomeRepositoryImpl
 import com.example.haat.data.reposiotry.VenuInfoRepositoryImpl
 import com.example.haat.data.reposiotry.VenuMenuRepositoryImpl
+import com.example.haat.domain.repository.CartRepository
 import com.example.haat.domain.repository.HomeRepository
 import com.example.haat.domain.repository.VenuInfoRepository
 import com.example.haat.domain.repository.VenuMenuRepository
@@ -23,4 +25,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindVenuMenuRepository(bindVenuMenuRepository: VenuMenuRepositoryImpl): VenuMenuRepository
+
+   @Binds
+    abstract fun bindCartRepository(cartRepository: CartRepositoryImpl): CartRepository
 }
